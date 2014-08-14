@@ -22,7 +22,9 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 + (NSNumber *)ai_numberWithBytes:(const void *)aValue objCType:(const char *)aType;
 @end
 
+
 @implementation NSObject (AutomaticInitializers)
+
 + (void)load
 {
     method_exchangeImplementations(class_getClassMethod([NSObject class], @selector(resolveClassMethod:)),
@@ -255,12 +257,11 @@ ffi_type *_ai_encodingToFFIType(const char *aEncoding)
 
 BOOL _ai_typeIsNumeric(const char * const aType)
 {
-    char const type = *aType;
-    return type == _C_DBL  || type == _C_FLT     || type == _C_INT
-        || type == _C_SHT  || type == _C_CHR     || type == _C_BOOL
-        || type == _C_LNG  || type == _C_LNG_LNG || type == _C_UINT
-        || type == _C_USHT || type == _C_UCHR    || type == _C_ULNG
-        || type == _C_ULNG_LNG;
+    return *aType == _C_DBL  || *aType == _C_FLT     || *aType == _C_INT
+        || *aType == _C_SHT  || *aType == _C_CHR     || *aType == _C_BOOL
+        || *aType == _C_LNG  || *aType == _C_LNG_LNG || *aType == _C_UINT
+        || *aType == _C_USHT || *aType == _C_UCHR    || *aType == _C_ULNG
+        || *aType == _C_ULNG_LNG;
 }
 
 ffi_type *_ai_scalarTypeToFFIType(const char * const aType)
@@ -292,7 +293,9 @@ ffi_type *_ai_scalarTypeToFFIType(const char * const aType)
     }
 }
 
+
 @implementation NSNumber (AutoInitializers)
+
 + (NSNumber *)ai_numberWithBytes:(const void * const )aValue
                         objCType:(const char * const )aType
 {
@@ -317,4 +320,5 @@ ffi_type *_ai_scalarTypeToFFIType(const char * const aType)
             return nil;
     }
 }
+
 @end
