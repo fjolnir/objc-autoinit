@@ -7,7 +7,7 @@
 @end
 
 @interface Klass (Initializers)
-+ (instancetype)klassWithNum:(NSUInteger)aNum obj:(id)aObj rect:(NSRect)aRect;
++ (instancetype)klassWithNum:(int)aNum obj:(id)aObj rect:(NSRect)aRect;
 @end
 
 @implementation Klass

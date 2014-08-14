@@ -18,7 +18,7 @@ The example below should output `<Klass: 0x..>: 123 456 {{7, 8}, {9, 10}}`
 @end
 
 @interface Klass (Initializers)
-+ (instancetype)klassWithNum:(NSUInteger)aNum obj:(id)aObj rect:(NSRect)aRect;
++ (instancetype)klassWithNum:(int)aNum obj:(id)aObj rect:(NSRect)aRect;
 @end
 
 @implementation Klass
