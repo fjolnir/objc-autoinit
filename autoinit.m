@@ -25,8 +25,28 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 @implementation NSObject (AutomaticInitializers)
 + (void)load
 {
+    method_exchangeImplementations(class_getClassMethod([NSObject class], @selector(resolveClassMethod:)),
+                                   class_getClassMethod([NSObject class], @selector(_ai_resolveClassMethod:)));
     method_exchangeImplementations(class_getClassMethod([NSObject class], @selector(resolveInstanceMethod:)),
                                    class_getClassMethod([NSObject class], @selector(_ai_resolveInstanceMethod:)));
+}
+
++ (BOOL)_ai_resolveClassMethod:(SEL const)aSel
+{
+    NSString * const sel = NSStringFromSelector(aSel);
+    NSRange const withRange = [sel rangeOfString:@"With"];
+    if(withRange.location != NSNotFound && [sel hasSuffix:@":"]) {
+        NSScanner * const scanner = [NSScanner scannerWithString:sel];
+        scanner.scanLocation = NSMaxRange(withRange);
+
+        NSString *encoding;
+        IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+        if(imp) {
+            class_addMethod(object_getClass(self), aSel, imp, [encoding UTF8String]);
+            return YES;
+        }
+    }
+    return [self _ai_resolveClassMethod:aSel];
 }
 
 + (BOOL)_ai_resolveInstanceMethod:(SEL const)aSel
@@ -34,84 +54,100 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
     NSString * const sel = NSStringFromSelector(aSel);
     if([sel hasPrefix:@"initWith"] && [sel hasSuffix:@":"]) {
         NSScanner * const scanner = [NSScanner scannerWithString:sel];
-        scanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@":"];
         scanner.scanLocation = 8;
         
-        NSMutableArray  * const properties = [NSMutableArray new];
-        NSMutableString * const typeEncoding = [@"@:" mutableCopy];
-
-        NSString *propertyName;
-        while([scanner scanUpToString:@":" intoString:&propertyName]) {
-            propertyName = [propertyName stringByReplacingCharactersInRange:(NSRange) {0, 1} 
-                   withString:[[propertyName substringToIndex:1] lowercaseString]];
-            objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
-            if(!property) {
-                NSLog(@"No %@ found", propertyName);
-                goto noInitializer;
-            }
-
-            // Scan for the type encoding
-            NSScanner * const attrScanner = [NSScanner scannerWithString:@(property_getAttributes(property))];
-            [attrScanner scanUpToString:@"T" intoString:NULL];
-            attrScanner.scanLocation += 1;
-            NSString *encoding;
-            if([attrScanner scanUpToString:@"," intoString:&encoding]) {
-                [typeEncoding appendString:encoding];
-                [properties addObject:@{ @"name": @(property_getName(property)),
-                                         @"encoding": encoding,
-                                         @"pointer": [NSValue valueWithPointer:property] }];
-            } else {
-                [NSException raise:NSInternalInconsistencyException
-                            format:@"Unable to parse attributes for property %@", propertyName];
-                goto noInitializer;
-            }
-        }
-        
-        // Scan the property attributes for types
-        ffi_type ** const parameterTypes = malloc(sizeof(void*) * ([properties count] + 2));
-        parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
-
-        for(NSUInteger i = 0; i < [properties count]; ++i) {
-            parameterTypes[i+2] = _ai_encodingToFFIType([properties[i][@"encoding"] UTF8String]);
-        }
-        
-        // Create the IMP
-        void *imp;
-        ffi_closure *closure = _ai_ffi_allocClosure(&imp);
-        if(!closure) {
-            [NSException raise:NSInternalInconsistencyException
-                        format:@"Failed to allocate closure for %@", sel];
-            goto noInitializer;
-        }
-      
-        ffi_cif * const cif = malloc(sizeof(ffi_cif));
-        if(ffi_prep_cif(cif, FFI_DEFAULT_ABI,
-                        (unsigned int)[properties count] + 2,
-                        &ffi_type_pointer,
-                        parameterTypes) == FFI_OK
-           && _ai_ffi_prepareClosure(closure, cif,
-                                     (void (*)(ffi_cif*,void*,void**,void*))_ai_closure,
-                                     (__bridge_retained void*)properties,
-                                     imp) == FFI_OK)
-        {
-            class_addMethod(self, aSel, imp, [typeEncoding UTF8String]);
+        NSString *encoding;
+        IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+        if(imp) {
+            class_addMethod(self, aSel, imp, [encoding UTF8String]);
             return YES;
+        }
+    }
+    return [self _ai_resolveInstanceMethod:aSel];
+}
+
+// aScanner must have its scan location at the first occurrence of a property within a initializing selector
++ (IMP)_ai_impForSelector:(SEL const)aSel scanner:(NSScanner * const)aScanner typeEncoding:(NSString **)aoEncoding
+{
+    NSParameterAssert(aSel && aScanner && aoEncoding);
+    aScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@":"];
+    NSMutableArray  * const properties = [NSMutableArray new];
+    NSMutableString * const typeEncoding = [@"@:" mutableCopy];
+
+    NSString *propertyName;
+    while([aScanner scanUpToString:@":" intoString:&propertyName]) {
+        propertyName = [propertyName stringByReplacingCharactersInRange:(NSRange) {0, 1}
+                                                             withString:[[propertyName substringToIndex:1] lowercaseString]];
+        objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
+        if(!property) {
+            NSLog(@"No %@ found", propertyName);
+            return NULL;
+        }
+
+        // Scan for the type encoding
+        NSScanner * const attrScanner = [NSScanner scannerWithString:@(property_getAttributes(property))];
+        [attrScanner scanUpToString:@"T" intoString:NULL];
+        attrScanner.scanLocation += 1;
+        NSString *encoding;
+        if([attrScanner scanUpToString:@"," intoString:&encoding]) {
+            [typeEncoding appendString:encoding];
+            [properties addObject:@{ @"name": @(property_getName(property)),
+                                     @"encoding": encoding,
+                                     @"pointer": [NSValue valueWithPointer:property] }];
         } else {
-            free(cif);
             [NSException raise:NSInternalInconsistencyException
-                        format:@"Failed to perpare closure for %@", sel];
-            goto noInitializer;
+                        format:@"Unable to parse attributes for property %@", propertyName];
+            return NULL;
         }
     }
 
-noInitializer:
-    return [self _ai_resolveInstanceMethod:aSel];
+    // Scan the property attributes for types
+    ffi_type ** const parameterTypes = malloc(sizeof(void*) * ([properties count] + 2));
+    parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
+
+    for(NSUInteger i = 0; i < [properties count]; ++i) {
+        parameterTypes[i+2] = _ai_encodingToFFIType([properties[i][@"encoding"] UTF8String]);
+    }
+
+    // Create the IMP
+    void *imp;
+    ffi_closure *closure = _ai_ffi_allocClosure(&imp);
+    if(!closure) {
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"Failed to allocate closure for %@", NSStringFromSelector(aSel)];
+        return NULL;
+    }
+
+    ffi_cif * const cif = malloc(sizeof(ffi_cif));
+    if(ffi_prep_cif(cif, FFI_DEFAULT_ABI,
+                    (unsigned int)[properties count] + 2,
+                    &ffi_type_pointer,
+                    parameterTypes) == FFI_OK
+       && _ai_ffi_prepareClosure(closure, cif,
+                                 (void (*)(ffi_cif*,void*,void**,void*))_ai_closure,
+                                 (__bridge_retained void*)properties,
+                                 imp) == FFI_OK)
+    {
+        return imp;
+    }
+    else {
+        free(cif);
+        [NSException raise:NSInternalInconsistencyException
+                    format:@"Failed to perpare closure for %@", NSStringFromSelector(aSel)];
+        return NULL;
+    }
 }
+
 @end
 
 void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], NSArray * const properties)
 {
-    id const object = [*(__strong id *)aArgs[0] init];
+    id object = *(__strong id *)aArgs[0];
+    if(class_isMetaClass(object_getClass(object)))
+        object = [[object alloc] init];
+    else
+        object = [object init];
+
     for(unsigned int i = 2; i < aCif->nargs; ++i) {
         NSDictionary * const property = properties[i-2];
         const char * const encoding = [property[@"encoding"] UTF8String];

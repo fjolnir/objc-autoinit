@@ -12,13 +12,13 @@ The example below should output `<Klass: 0x..>: 123 456 {{7, 8}, {9, 10}}`
 
 ```objc
 @interface Klass : NSObject
-@property int number;
-@property id object;
+@property int num;
+@property id obj;
 @property NSRect rect;
 @end
 
 @interface Klass (Initializers)
-- (instancetype)initWithNumber:(NSUInteger)aNum object:(id)aObj rect:(NSRect)aRect;
++ (instancetype)klassWithNum:(NSUInteger)aNum obj:(id)aObj rect:(NSRect)aRect;
 @end
 
 @implementation Klass
@@ -26,9 +26,7 @@ The example below should output `<Klass: 0x..>: 123 456 {{7, 8}, {9, 10}}`
 
 int main(int argc, char *argv[]) {
     @autoreleasepool {
-        Klass *test = [[Klass alloc] initWithNumber:123
-                                             object:@456
-                                               rect:(NSRect) { {7,8},{9,10} }];
+        Klass * const test = [Klass klassWithNum:123 obj:@456 rect:(NSRect) { {7,8},{9,10} }];
         NSLog(@"%@: %d %@ %@", test, (int)test.num, test.obj, NSStringFromRect(test.rect));
     }
 }

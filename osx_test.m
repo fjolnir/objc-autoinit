@@ -7,7 +7,7 @@
 @end
 
 @interface Klass (Initializers)
-- (instancetype)initWithNum:(NSUInteger)aNum obj:(id)aObj rect:(NSRect)aRect;
++ (instancetype)klassWithNum:(NSUInteger)aNum obj:(id)aObj rect:(NSRect)aRect;
 @end
 
 @implementation Klass
@@ -15,9 +15,7 @@
 
 int main(int argc, char *argv[]) {
     @autoreleasepool {
-        Klass * const test = [[Klass alloc] initWithNum:123
-                                                    obj:@456
-                                                   rect:(NSRect) { {7,8},{9,10} }];
+        Klass * const test = [Klass klassWithNum:123 obj:@456 rect:(NSRect) { {7,8},{9,10} }];
         NSLog(@"%@: %d %@ %@", test, (int)test.num, test.obj, NSStringFromRect(test.rect));
     }
 }
