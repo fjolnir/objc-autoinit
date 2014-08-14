@@ -101,14 +101,6 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         }
     }
 
-    // Scan the property attributes for types
-    ffi_type ** const parameterTypes = malloc(sizeof(void*) * ([properties count] + 2));
-    parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
-
-    for(NSUInteger i = 0; i < [properties count]; ++i) {
-        parameterTypes[i+2] = _ai_encodingToFFIType([properties[i][@"encoding"] UTF8String]);
-    }
-
     // Create the IMP
     void *imp;
     ffi_closure *closure = _ai_ffi_allocClosure(&imp);
@@ -116,6 +108,12 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         [NSException raise:NSInternalInconsistencyException
                     format:@"Failed to allocate closure for %@", NSStringFromSelector(aSel)];
         return NULL;
+    }
+
+    ffi_type ** const parameterTypes = malloc(sizeof(void*) * ([properties count] + 2));
+    parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
+    for(NSUInteger i = 0; i < [properties count]; ++i) {
+        parameterTypes[i+2] = _ai_encodingToFFIType([properties[i][@"encoding"] UTF8String]);
     }
 
     ffi_cif * const cif = malloc(sizeof(ffi_cif));
@@ -132,6 +130,7 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         return imp;
     }
     else {
+        free(parameterTypes);
         free(cif);
         [NSException raise:NSInternalInconsistencyException
                     format:@"Failed to perpare closure for %@", NSStringFromSelector(aSel)];
