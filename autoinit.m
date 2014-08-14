@@ -128,6 +128,7 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
                                  (__bridge_retained void*)properties,
                                  imp) == FFI_OK)
     {
+        *aoEncoding = typeEncoding;
         return imp;
     }
     else {
