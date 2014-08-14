@@ -4,8 +4,14 @@
 #import <ffi/ffi.h>
 #import <sys/mman.h>
 
+typedef struct {
+    objc_property_t property;
+    void *name; // NSString pointer
+    const char *encoding;
+} _ai_propertyInfo_t;
+
 // Wrapper closure called as a result of a message to `initWith..`
-static void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], NSArray * const paramInfo);
+static void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _ai_propertyInfo_t * const paramInfo);
 
 static ffi_closure *_ai_ffi_allocClosure(void ** const codePtr);
 static ffi_status _ai_ffi_prepareClosure(ffi_closure * const closure, ffi_cif * const cif,
@@ -14,6 +20,7 @@ static ffi_status _ai_ffi_prepareClosure(ffi_closure * const closure, ffi_cif * 
 static ffi_type *_ai_encodingToFFIType(const char *aEncoding);
 static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
 static BOOL _ai_typeIsNumeric(const char * const aType);
+
 
 @interface NSObject (AutomaticInitializers)
 @end
@@ -72,17 +79,20 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 + (IMP)_ai_impForSelector:(SEL const)aSel scanner:(NSScanner * const)aScanner typeEncoding:(NSString **)aoEncoding
 {
     NSParameterAssert(aSel && aScanner && aoEncoding);
+    NSString * const selStr = NSStringFromSelector(aSel);
     aScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@":"];
-    NSMutableArray  * const properties = [NSMutableArray new];
+
+    _ai_propertyInfo_t * const properties = malloc(sizeof(_ai_propertyInfo_t) * [[selStr componentsSeparatedByString:@":"] count]);
     NSMutableString * const typeEncoding = [@"@:" mutableCopy];
 
+    NSUInteger propertyCount = 0;
     NSString *propertyName;
     while([aScanner scanUpToString:@":" intoString:&propertyName]) {
         propertyName = [propertyName stringByReplacingCharactersInRange:(NSRange) {0, 1}
                                                              withString:[[propertyName substringToIndex:1] lowercaseString]];
         objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
         if(!property) {
-            NSLog(@"No %@ found", propertyName);
+            free(properties);
             return NULL;
         }
 
@@ -93,10 +103,13 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         NSString *encoding;
         if([attrScanner scanUpToString:@"," intoString:&encoding]) {
             [typeEncoding appendString:encoding];
-            [properties addObject:@{ @"name": @(property_getName(property)),
-                                     @"encoding": encoding,
-                                     @"pointer": [NSValue valueWithPointer:property] }];
+            properties[propertyCount++] = (_ai_propertyInfo_t) {
+                property,
+                (__bridge_retained void *)@(property_getName(property)),
+                strdup([encoding UTF8String])
+            };
         } else {
+            free(properties);
             [NSException raise:NSInternalInconsistencyException
                         format:@"Unable to parse attributes for property %@", propertyName];
             return NULL;
@@ -107,25 +120,26 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
     void *imp;
     ffi_closure *closure = _ai_ffi_allocClosure(&imp);
     if(!closure) {
+        free(properties);
         [NSException raise:NSInternalInconsistencyException
                     format:@"Failed to allocate closure for %@", NSStringFromSelector(aSel)];
         return NULL;
     }
 
-    ffi_type ** const parameterTypes = malloc(sizeof(void*) * ([properties count] + 2));
+    ffi_type ** const parameterTypes = malloc(sizeof(void*) * (propertyCount + 2));
     parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
-    for(NSUInteger i = 0; i < [properties count]; ++i) {
-        parameterTypes[i+2] = _ai_encodingToFFIType([properties[i][@"encoding"] UTF8String]);
+    for(NSUInteger i = 0; i < propertyCount; ++i) {
+        parameterTypes[i+2] = _ai_encodingToFFIType(properties[i].encoding);
     }
 
     ffi_cif * const cif = malloc(sizeof(ffi_cif));
     if(ffi_prep_cif(cif, FFI_DEFAULT_ABI,
-                    (unsigned int)[properties count] + 2,
+                    (unsigned int)propertyCount + 2,
                     &ffi_type_pointer,
                     parameterTypes) == FFI_OK
        && _ai_ffi_prepareClosure(closure, cif,
                                  (void (*)(ffi_cif*,void*,void**,void*))_ai_closure,
-                                 (__bridge_retained void*)properties,
+                                 properties,
                                  imp) == FFI_OK)
     {
         *aoEncoding = typeEncoding;
@@ -142,7 +156,7 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 
 @end
 
-void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], NSArray * const properties)
+void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _ai_propertyInfo_t * const properties)
 {
     id object = *(__strong id *)aArgs[0];
     if(class_isMetaClass(object_getClass(object)))
@@ -151,14 +165,13 @@ void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], N
         object = [object init];
 
     for(unsigned int i = 2; i < aCif->nargs; ++i) {
-        NSDictionary * const property = properties[i-2];
-        const char * const encoding = [property[@"encoding"] UTF8String];
-        id const box = *encoding == _C_ID
+        _ai_propertyInfo_t const property = properties[i-2];
+        id const box = *property.encoding == _C_ID
                      ? *(__strong id *)aArgs[i]
-                     : _ai_typeIsNumeric(encoding)
-                     ? [NSNumber ai_numberWithBytes:aArgs[i] objCType:[property[@"encoding"] UTF8String]]
-                     : [NSValue valueWithBytes:aArgs[i] objCType:[property[@"encoding"] UTF8String]];
-        [object setValue:box forKey:property[@"name"]];
+                     : _ai_typeIsNumeric(property.encoding)
+                     ? [NSNumber ai_numberWithBytes:aArgs[i] objCType:property.encoding]
+                     : [NSValue valueWithBytes:aArgs[i] objCType:property.encoding];
+        [object setValue:box forKey:(__bridge id)property.name];
     }
     *aoRet = object;
 }
