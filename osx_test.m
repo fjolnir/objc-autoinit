@@ -1,9 +1,9 @@
 #import <Foundation/Foundation.h>
 
 @interface Klass : NSObject
-@property int num;
-@property id obj;
-@property NSRect rect;
+@property(readonly) int num;
+@property(readonly) id obj;
+@property(readonly) NSRect rect;
 @end
 
 @interface Klass (Initializers)

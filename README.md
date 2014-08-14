@@ -12,9 +12,9 @@ The example below should output `<Klass: 0x..>: 123 456 {{7, 8}, {9, 10}}`
 
 ```objc
 @interface Klass : NSObject
-@property int num;
-@property id obj;
-@property NSRect rect;
+@property(readonly) int num;
+@property(readonly) id obj;
+@property(readonly) NSRect rect;
 @end
 
 @interface Klass (Initializers)
