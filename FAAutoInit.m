@@ -136,7 +136,7 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
     if(!closure) {
         free(properties);
         [NSException raise:NSInternalInconsistencyException
-                    format:@"Failed to allocate closure for %@", NSStringFromSelector(aSel)];
+                    format:@"Failed to allocate closure for %@", selStr];
         return NULL;
     }
 
@@ -163,7 +163,7 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
         free(parameterTypes);
         free(cif);
         [NSException raise:NSInternalInconsistencyException
-                    format:@"Failed to perpare closure for %@", NSStringFromSelector(aSel)];
+                    format:@"Failed to perpare closure for %@", selStr];
         return NULL;
     }
 }
