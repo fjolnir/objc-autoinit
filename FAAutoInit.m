@@ -9,6 +9,9 @@ typedef struct {
     objc_property_t property;
     void *name; // NSString pointer
     const char *encoding;
+    Ivar ivar;
+    NSUInteger size;
+    BOOL shouldCopy; // Only used if ivar is present (setValue:forKey: handles it otherwise)
 } _ai_propertyInfo_t;
 
 // Wrapper closure called as a result of a message to `initWith..`
@@ -20,14 +23,14 @@ static ffi_status _ai_ffi_prepareClosure(ffi_closure * const closure, ffi_cif * 
                                          void * const user_data, void * const codeloc);
 static ffi_type *_ai_encodingToFFIType(const char *aEncoding);
 static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
-static BOOL _ai_typeIsNumeric(const char * const aType);
 
 
 @interface NSObject (AutomaticInitializers)
 @end
 
-@interface NSNumber (AutomaticInitializers)
-+ (NSNumber *)ai_numberWithBytes:(const void *)aValue objCType:(const char *)aType;
+@interface NSValue (AutomaticInitializers)
+// Same as the original, except it returns NSNumbers where appropriate
++ (NSValue *)ai_valueWithBytes:(const void *)aBytes objCType:(const char *)aType;
 @end
 
 
@@ -96,29 +99,35 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         propertyName = [propertyName stringByReplacingCharactersInRange:(NSRange) {0, 1}
                                                              withString:[[propertyName substringToIndex:1] lowercaseString]];
         objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
-        if(!property) {
+        unsigned int attrCount;
+        objc_property_attribute_t * const attributes = property_copyAttributeList(property, &attrCount);
+        if(!property || ! attributes) {
             free(properties);
             return NULL;
         }
 
-        // Scan for the type encoding
-        NSScanner * const attrScanner = [NSScanner scannerWithString:@(property_getAttributes(property))];
-        [attrScanner scanUpToString:@"T" intoString:NULL];
-        attrScanner.scanLocation += 1;
-        NSString *encoding;
-        if([attrScanner scanUpToString:@"," intoString:&encoding]) {
-            [typeEncoding appendString:encoding];
-            properties[propertyCount++] = (_ai_propertyInfo_t) {
-                property,
-                (__bridge_retained void *)@(property_getName(property)),
-                strdup([encoding UTF8String])
-            };
-        } else {
+        _ai_propertyInfo_t propertyInfo = {
+            .property = property,
+            .name = (__bridge_retained void *)@(property_getName(property))
+        };
+        for(unsigned int i = 0; i < attrCount; ++i) {
+            objc_property_attribute_t const attr = attributes[i];
+            if(strncmp("T", attr.name, 1) == 0) {
+                propertyInfo.encoding = strdup(attr.value);
+                NSGetSizeAndAlignment(attr.value, &propertyInfo.size, NULL);
+            } else if(strncmp("V", attr.name, 1) == 0)
+                propertyInfo.ivar = class_getInstanceVariable(self, attr.value);
+            else if(strncmp("C", attr.name, 1) == 0)
+                propertyInfo.shouldCopy = YES;
+        }
+        free(attributes);
+        if(!propertyInfo.encoding) {
             free(properties);
             [NSException raise:NSInternalInconsistencyException
-                        format:@"Unable to parse attributes for property %@", propertyName];
+                        format:@"Unable to get type of property %@", propertyName];
             return NULL;
         }
+        properties[propertyCount++] = propertyInfo;
     }
 
     // Create the IMP
@@ -131,7 +140,7 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
         return NULL;
     }
 
-    ffi_type ** const parameterTypes = malloc(sizeof(void*) * (propertyCount + 2));
+    ffi_type ** const parameterTypes = malloc(sizeof(ffi_type*) * (propertyCount + 2));
     parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
     for(NSUInteger i = 0; i < propertyCount; ++i) {
         parameterTypes[i+2] = _ai_encodingToFFIType(properties[i].encoding);
@@ -171,12 +180,20 @@ void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _
 
     for(unsigned int i = 2; i < aCif->nargs; ++i) {
         _ai_propertyInfo_t const property = properties[i-2];
-        id const box = *property.encoding == _C_ID
-                     ? *(__strong id *)aArgs[i]
-                     : _ai_typeIsNumeric(property.encoding)
-                     ? [NSNumber ai_numberWithBytes:aArgs[i] objCType:property.encoding]
-                     : [NSValue valueWithBytes:aArgs[i] objCType:property.encoding];
-        [object setValue:box forKey:(__bridge id)property.name];
+        if(!property.ivar) {
+            id const box = *property.encoding == _C_ID
+                         ? *(__strong id *)aArgs[i]
+                         : [NSValue ai_valueWithBytes:aArgs[i] objCType:property.encoding];
+            [object setValue:box forKey:(__bridge id)property.name];
+        } else {
+            if(*property.encoding == _C_ID) {
+                id const parameter = *(__unsafe_unretained id *)aArgs[i];
+                object_setIvar(object, property.ivar,
+                               property.shouldCopy ? [parameter copy] : parameter);
+            } else
+                memcpy(((__bridge void *)object) + ivar_getOffset(property.ivar),
+                       aArgs[i], property.size);
+        }
     }
     *aoRet = object;
 }
@@ -274,15 +291,6 @@ ffi_type *_ai_encodingToFFIType(const char *aEncoding)
     }
 }
 
-BOOL _ai_typeIsNumeric(const char * const aType)
-{
-    return *aType == _C_DBL  || *aType == _C_FLT     || *aType == _C_INT
-        || *aType == _C_SHT  || *aType == _C_CHR     || *aType == _C_BOOL
-        || *aType == _C_LNG  || *aType == _C_LNG_LNG || *aType == _C_UINT
-        || *aType == _C_USHT || *aType == _C_UCHR    || *aType == _C_ULNG
-        || *aType == _C_ULNG_LNG;
-}
-
 ffi_type *_ai_scalarTypeToFFIType(const char * const aType)
 {
     switch(*aType) {
@@ -313,30 +321,28 @@ ffi_type *_ai_scalarTypeToFFIType(const char * const aType)
 }
 
 
-@implementation NSNumber (AutoInitializers)
+@implementation NSValue (AutomaticInitializers)
 
-+ (NSNumber *)ai_numberWithBytes:(const void * const )aValue
-                        objCType:(const char * const )aType
++ (NSValue *)ai_valueWithBytes:(const void * const )aBytes
+                       objCType:(const char * const )aType
 {
-    NSParameterAssert(aType && aValue);
+    NSParameterAssert(aType && aBytes);
     switch(*aType) {
-        case _C_DBL:      return @(*(double *)aValue);
-        case _C_FLT:      return @(*(float *)aValue);
-        case _C_INT:      return @(*(int *)aValue);
-        case _C_SHT:      return @(*(short *)aValue);
-        case _C_CHR:      return @(*(char *)aValue);
-        case _C_BOOL:     return @(*(BOOL *)aValue);
-        case _C_LNG:      return @(*(long *)aValue);
-        case _C_LNG_LNG:  return @(*(long long *)aValue);
-        case _C_UINT:     return @(*(unsigned int *)aValue);
-        case _C_USHT:     return @(*(unsigned short *)aValue);
-        case _C_UCHR:     return @(*(unsigned char *)aValue);
-        case _C_ULNG:     return @(*(unsigned long *)aValue);
-        case _C_ULNG_LNG: return @(*(unsigned long long *)aValue);
+        case _C_DBL:      return @(*(double *)aBytes);
+        case _C_FLT:      return @(*(float *)aBytes);
+        case _C_INT:      return @(*(int *)aBytes);
+        case _C_SHT:      return @(*(short *)aBytes);
+        case _C_CHR:      return @(*(char *)aBytes);
+        case _C_BOOL:     return @(*(BOOL *)aBytes);
+        case _C_LNG:      return @(*(long *)aBytes);
+        case _C_LNG_LNG:  return @(*(long long *)aBytes);
+        case _C_UINT:     return @(*(unsigned int *)aBytes);
+        case _C_USHT:     return @(*(unsigned short *)aBytes);
+        case _C_UCHR:     return @(*(unsigned char *)aBytes);
+        case _C_ULNG:     return @(*(unsigned long *)aBytes);
+        case _C_ULNG_LNG: return @(*(unsigned long long *)aBytes);
         default:
-            [NSException raise:NSGenericException
-                        format:@"Tried to create NSNumber from non-numeric type %c!", *aType];
-            return nil;
+            return [self valueWithBytes:aBytes objCType:aType];
     }
 }
 
