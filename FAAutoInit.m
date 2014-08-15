@@ -179,20 +179,20 @@ void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _
         object = [object init];
 
     for(unsigned int i = 2; i < aCif->nargs; ++i) {
-        _ai_propertyInfo_t const property = properties[i-2];
-        if(!property.ivar) {
-            id const box = *property.encoding == _C_ID
+        _ai_propertyInfo_t const propertyInfo = properties[i-2];
+        if(!propertyInfo.ivar) {
+            id const box = *propertyInfo.encoding == _C_ID
                          ? *(__strong id *)aArgs[i]
-                         : [NSValue ai_valueWithBytes:aArgs[i] objCType:property.encoding];
-            [object setValue:box forKey:(__bridge id)property.name];
+                         : [NSValue ai_valueWithBytes:aArgs[i] objCType:propertyInfo.encoding];
+            [object setValue:box forKey:(__bridge id)propertyInfo.name];
         } else {
-            if(*property.encoding == _C_ID) {
+            if(*propertyInfo.encoding == _C_ID) {
                 id const parameter = *(__unsafe_unretained id *)aArgs[i];
-                object_setIvar(object, property.ivar,
-                               property.shouldCopy ? [parameter copy] : parameter);
+                object_setIvar(object, propertyInfo.ivar,
+                               propertyInfo.shouldCopy ? [parameter copy] : parameter);
             } else
-                memcpy(((__bridge void *)object) + ivar_getOffset(property.ivar),
-                       aArgs[i], property.size);
+                memcpy(((__bridge void *)object) + ivar_getOffset(propertyInfo.ivar),
+                       aArgs[i], propertyInfo.size);
         }
     }
     *aoRet = object;
