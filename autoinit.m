@@ -160,7 +160,7 @@ void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _
 {
     id object = *(__strong id *)aArgs[0];
     if(class_isMetaClass(object_getClass(object)))
-        object = [[object alloc] init];
+        object = [object new];
     else
         object = [object init];
 
@@ -239,14 +239,14 @@ ffi_type *_ai_encodingToFFIType(const char *aEncoding)
         type->elements = (ffi_type **)malloc(sizeof(ffi_type*) * numFields + 1);
         
         if(isArray) {
-            ffi_type *fieldType = _ai_encodingToFFIType(fieldEncoding);
+            ffi_type * const fieldType = _ai_encodingToFFIType(fieldEncoding);
             assert(fieldType);
             for(int i = 0; i < numFields; i++) {
                 type->elements[i] = fieldType;
             }
         } else {
             for(int i = 0; i < numFields; i++) {
-                ffi_type *fieldType = _ai_encodingToFFIType(fieldEncoding);
+                ffi_type * const fieldType = _ai_encodingToFFIType(fieldEncoding);
                 assert(fieldType);
                 type->elements[i] = fieldType;
                 fieldEncoding = NSGetSizeAndAlignment(fieldEncoding, NULL, NULL);
@@ -261,7 +261,8 @@ ffi_type *_ai_encodingToFFIType(const char *aEncoding)
         // TODO: this should use the largest type 
         const char *fieldEncoding = strstr(aEncoding, "=") + 1;
         return _ai_encodingToFFIType(fieldEncoding);
-    } else {
+    }
+    else {
         [NSException raise:NSInternalInconsistencyException
                     format:@"Unhandled type encoding %s", aEncoding];
         return NULL;
