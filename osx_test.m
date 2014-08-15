@@ -1,6 +1,7 @@
 #import <Foundation/Foundation.h>
+#import "FAAutoInit.h"
 
-@interface Klass : NSObject
+@interface Klass : NSObject <FAAutoInit>
 @property(readonly) int num;
 @property(readonly) id obj;
 @property(readonly) NSRect rect;

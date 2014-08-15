@@ -3,6 +3,7 @@
 #import <objc/message.h>
 #import <ffi/ffi.h>
 #import <sys/mman.h>
+#import "FAAutoInit.h"
 
 typedef struct {
     objc_property_t property;
@@ -42,17 +43,19 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 
 + (BOOL)_ai_resolveClassMethod:(SEL const)aSel
 {
-    NSString * const sel = NSStringFromSelector(aSel);
-    NSRange const withRange = [sel rangeOfString:@"With"];
-    if(withRange.location != NSNotFound && [sel hasSuffix:@":"]) {
-        NSScanner * const scanner = [NSScanner scannerWithString:sel];
-        scanner.scanLocation = NSMaxRange(withRange);
+    if(class_conformsToProtocol(self, @protocol(FAAutoInit))) {
+        NSString * const sel = NSStringFromSelector(aSel);
+        NSRange const withRange = [sel rangeOfString:@"With"];
+        if(withRange.location != NSNotFound && [sel hasSuffix:@":"]) {
+            NSScanner * const scanner = [NSScanner scannerWithString:sel];
+            scanner.scanLocation = NSMaxRange(withRange);
 
-        NSString *encoding;
-        IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
-        if(imp) {
-            class_addMethod(object_getClass(self), aSel, imp, [encoding UTF8String]);
-            return YES;
+            NSString *encoding;
+            IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+            if(imp) {
+                class_addMethod(object_getClass(self), aSel, imp, [encoding UTF8String]);
+                return YES;
+            }
         }
     }
     return [self _ai_resolveClassMethod:aSel];
@@ -60,16 +63,18 @@ static BOOL _ai_typeIsNumeric(const char * const aType);
 
 + (BOOL)_ai_resolveInstanceMethod:(SEL const)aSel
 {
-    NSString * const sel = NSStringFromSelector(aSel);
-    if([sel hasPrefix:@"initWith"] && [sel hasSuffix:@":"]) {
-        NSScanner * const scanner = [NSScanner scannerWithString:sel];
-        scanner.scanLocation = 8;
-        
-        NSString *encoding;
-        IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
-        if(imp) {
-            class_addMethod(self, aSel, imp, [encoding UTF8String]);
-            return YES;
+    if(class_conformsToProtocol(self, @protocol(FAAutoInit))) {
+        NSString * const sel = NSStringFromSelector(aSel);
+        if([sel hasPrefix:@"initWith"] && [sel hasSuffix:@":"]) {
+            NSScanner * const scanner = [NSScanner scannerWithString:sel];
+            scanner.scanLocation = 8;
+            
+            NSString *encoding;
+            IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+            if(imp) {
+                class_addMethod(self, aSel, imp, [encoding UTF8String]);
+                return YES;
+            }
         }
     }
     return [self _ai_resolveInstanceMethod:aSel];

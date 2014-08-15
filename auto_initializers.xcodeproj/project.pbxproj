@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C7DF831C199C6B3200BA14B1 /* autoinit.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF831B199C6B3200BA14B1 /* autoinit.m */; };
+		C7DF831C199C6B3200BA14B1 /* FAAutoInit.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */; };
 		C7DF832B199C6BAC00BA14B1 /* osx_test.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF832A199C6BAC00BA14B1 /* osx_test.m */; };
 		C7DF832E199C6BBB00BA14B1 /* libautoinit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C7DF8301199C6AF700BA14B1 /* libautoinit.a */; };
 		C7DF8330199C6C2200BA14B1 /* libffi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C7DF831D199C6B7300BA14B1 /* libffi.dylib */; };
@@ -37,10 +37,11 @@
 
 /* Begin PBXFileReference section */
 		C7DF8301199C6AF700BA14B1 /* libautoinit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libautoinit.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		C7DF831B199C6B3200BA14B1 /* autoinit.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = autoinit.m; sourceTree = "<group>"; };
+		C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FAAutoInit.m; sourceTree = "<group>"; };
 		C7DF831D199C6B7300BA14B1 /* libffi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libffi.dylib; path = usr/lib/libffi.dylib; sourceTree = SDKROOT; };
 		C7DF8323199C6B8800BA14B1 /* osx_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = osx_test; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7DF832A199C6BAC00BA14B1 /* osx_test.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = osx_test.m; sourceTree = "<group>"; };
+		C7FCD875199E560800054AE7 /* FAAutoInit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FAAutoInit.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,7 +67,8 @@
 		C7DF82F8199C6AF700BA14B1 = {
 			isa = PBXGroup;
 			children = (
-				C7DF831B199C6B3200BA14B1 /* autoinit.m */,
+				C7FCD875199E560800054AE7 /* FAAutoInit.h */,
+				C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */,
 				C7DF832A199C6BAC00BA14B1 /* osx_test.m */,
 				C7DF8302199C6AF700BA14B1 /* Products */,
 				C7DF831D199C6B7300BA14B1 /* libffi.dylib */,
@@ -170,7 +172,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C7DF831C199C6B3200BA14B1 /* autoinit.m in Sources */,
+				C7DF831C199C6B3200BA14B1 /* FAAutoInit.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -322,6 +324,7 @@
 				C7DF8317199C6AF700BA14B1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C7DF8327199C6B8800BA14B1 /* Build configuration list for PBXNativeTarget "osx_test" */ = {
 			isa = XCConfigurationList;
@@ -330,6 +333,7 @@
 				C7DF8329199C6B8800BA14B1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
