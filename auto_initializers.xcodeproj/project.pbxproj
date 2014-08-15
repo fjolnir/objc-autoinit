@@ -7,13 +7,27 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C76B9AE1199E87FC005DFEBB /* FAAutoInit.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */; };
+		C76B9AE4199E8DB0005DFEBB /* libffi.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C76B9AE3199E8DB0005DFEBB /* libffi.a */; };
+		C76B9B0C199E8E8F005DFEBB /* test.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF832A199C6BAC00BA14B1 /* test.m */; };
+		C76B9B0F199E8E9E005DFEBB /* libautoinit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C76B9AC7199E8798005DFEBB /* libautoinit.a */; };
+		C76B9B15199E975A005DFEBB /* ios_test_info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C76B9B14199E975A005DFEBB /* ios_test_info.plist */; };
+		C76B9B16199E9789005DFEBB /* FAAutoInit.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = C7FCD875199E560800054AE7 /* FAAutoInit.h */; };
+		C76B9B17199E97BB005DFEBB /* FAAutoInit.h in Headers */ = {isa = PBXBuildFile; fileRef = C7FCD875199E560800054AE7 /* FAAutoInit.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C7DF831C199C6B3200BA14B1 /* FAAutoInit.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */; };
-		C7DF832B199C6BAC00BA14B1 /* osx_test.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF832A199C6BAC00BA14B1 /* osx_test.m */; };
+		C7DF832B199C6BAC00BA14B1 /* test.m in Sources */ = {isa = PBXBuildFile; fileRef = C7DF832A199C6BAC00BA14B1 /* test.m */; };
 		C7DF832E199C6BBB00BA14B1 /* libautoinit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C7DF8301199C6AF700BA14B1 /* libautoinit.a */; };
 		C7DF8330199C6C2200BA14B1 /* libffi.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C7DF831D199C6B7300BA14B1 /* libffi.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C76B9B0D199E8E9A005DFEBB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C7DF82F9199C6AF700BA14B1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C76B9AC6199E8798005DFEBB;
+			remoteInfo = "iOS Library";
+		};
 		C7DF832C199C6BB700BA14B1 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C7DF82F9199C6AF700BA14B1 /* Project object */;
@@ -24,27 +38,48 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		C7DF8321199C6B8800BA14B1 /* CopyFiles */ = {
+		C76B9AC5199E8798005DFEBB /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
-			dstPath = /usr/share/man/man1/;
-			dstSubfolderSpec = 0;
+			dstPath = include;
+			dstSubfolderSpec = 16;
 			files = (
+				C76B9B16199E9789005DFEBB /* FAAutoInit.h in CopyFiles */,
 			);
-			runOnlyForDeploymentPostprocessing = 1;
+			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C76B9AC7199E8798005DFEBB /* libautoinit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libautoinit.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		C76B9AE3199E8DB0005DFEBB /* libffi.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libffi.a; path = "libffi-ios/lib/libffi.a"; sourceTree = "<group>"; };
+		C76B9AE9199E8E49005DFEBB /* ios_test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ios_test.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C76B9B14199E975A005DFEBB /* ios_test_info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = ios_test_info.plist; sourceTree = "<group>"; };
 		C7DF8301199C6AF700BA14B1 /* libautoinit.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libautoinit.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FAAutoInit.m; sourceTree = "<group>"; };
 		C7DF831D199C6B7300BA14B1 /* libffi.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libffi.dylib; path = usr/lib/libffi.dylib; sourceTree = SDKROOT; };
 		C7DF8323199C6B8800BA14B1 /* osx_test */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = osx_test; sourceTree = BUILT_PRODUCTS_DIR; };
-		C7DF832A199C6BAC00BA14B1 /* osx_test.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = osx_test.m; sourceTree = "<group>"; };
+		C7DF832A199C6BAC00BA14B1 /* test.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = test.m; sourceTree = "<group>"; };
 		C7FCD875199E560800054AE7 /* FAAutoInit.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FAAutoInit.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C76B9AC4199E8798005DFEBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76B9AE4199E8DB0005DFEBB /* libffi.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C76B9AE6199E8E49005DFEBB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76B9B0F199E8E9E005DFEBB /* libautoinit.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C7DF82FE199C6AF700BA14B1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -64,14 +99,32 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C76B9B18199E9806005DFEBB /* Frameworks & Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				C76B9AE3199E8DB0005DFEBB /* libffi.a */,
+				C7DF831D199C6B7300BA14B1 /* libffi.dylib */,
+			);
+			name = "Frameworks & Libraries";
+			sourceTree = "<group>";
+		};
+		C76B9B19199E981A005DFEBB /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C76B9B14199E975A005DFEBB /* ios_test_info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		C7DF82F8199C6AF700BA14B1 = {
 			isa = PBXGroup;
 			children = (
 				C7FCD875199E560800054AE7 /* FAAutoInit.h */,
 				C7DF831B199C6B3200BA14B1 /* FAAutoInit.m */,
-				C7DF832A199C6BAC00BA14B1 /* osx_test.m */,
+				C7DF832A199C6BAC00BA14B1 /* test.m */,
+				C76B9B19199E981A005DFEBB /* Supporting Files */,
+				C76B9B18199E9806005DFEBB /* Frameworks & Libraries */,
 				C7DF8302199C6AF700BA14B1 /* Products */,
-				C7DF831D199C6B7300BA14B1 /* libffi.dylib */,
 			);
 			sourceTree = "<group>";
 		};
@@ -80,6 +133,8 @@
 			children = (
 				C7DF8301199C6AF700BA14B1 /* libautoinit.a */,
 				C7DF8323199C6B8800BA14B1 /* osx_test */,
+				C76B9AC7199E8798005DFEBB /* libautoinit.a */,
+				C76B9AE9199E8E49005DFEBB /* ios_test.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -91,15 +146,51 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C76B9B17199E97BB005DFEBB /* FAAutoInit.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		C7DF8300199C6AF700BA14B1 /* auto_initializers */ = {
+		C76B9AC6199E8798005DFEBB /* iOS Library */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C7DF8315199C6AF700BA14B1 /* Build configuration list for PBXNativeTarget "auto_initializers" */;
+			buildConfigurationList = C76B9AD8199E8798005DFEBB /* Build configuration list for PBXNativeTarget "iOS Library" */;
+			buildPhases = (
+				C76B9AC3199E8798005DFEBB /* Sources */,
+				C76B9AC4199E8798005DFEBB /* Frameworks */,
+				C76B9AC5199E8798005DFEBB /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "iOS Library";
+			productName = "iOS Library";
+			productReference = C76B9AC7199E8798005DFEBB /* libautoinit.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		C76B9AE8199E8E49005DFEBB /* ios_test */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C76B9B06199E8E49005DFEBB /* Build configuration list for PBXNativeTarget "ios_test" */;
+			buildPhases = (
+				C76B9AE5199E8E49005DFEBB /* Sources */,
+				C76B9AE6199E8E49005DFEBB /* Frameworks */,
+				C76B9AE7199E8E49005DFEBB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C76B9B0E199E8E9A005DFEBB /* PBXTargetDependency */,
+			);
+			name = ios_test;
+			productName = ios_test;
+			productReference = C76B9AE9199E8E49005DFEBB /* ios_test.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C7DF8300199C6AF700BA14B1 /* Mac Library */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C7DF8315199C6AF700BA14B1 /* Build configuration list for PBXNativeTarget "Mac Library" */;
 			buildPhases = (
 				C7DF82FD199C6AF700BA14B1 /* Sources */,
 				C7DF82FE199C6AF700BA14B1 /* Frameworks */,
@@ -109,7 +200,7 @@
 			);
 			dependencies = (
 			);
-			name = auto_initializers;
+			name = "Mac Library";
 			productName = auto_initializers;
 			productReference = C7DF8301199C6AF700BA14B1 /* libautoinit.a */;
 			productType = "com.apple.product-type.library.static";
@@ -120,7 +211,6 @@
 			buildPhases = (
 				C7DF831F199C6B8800BA14B1 /* Sources */,
 				C7DF8320199C6B8800BA14B1 /* Frameworks */,
-				C7DF8321199C6B8800BA14B1 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -141,6 +231,12 @@
 				LastUpgradeCheck = 0600;
 				ORGANIZATIONNAME = "Fjölnir Ásgeirsson";
 				TargetAttributes = {
+					C76B9AC6199E8798005DFEBB = {
+						CreatedOnToolsVersion = 6.0;
+					};
+					C76B9AE8199E8E49005DFEBB = {
+						CreatedOnToolsVersion = 6.0;
+					};
 					C7DF8300199C6AF700BA14B1 = {
 						CreatedOnToolsVersion = 6.0;
 					};
@@ -155,19 +251,49 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				Base,
 			);
 			mainGroup = C7DF82F8199C6AF700BA14B1;
 			productRefGroup = C7DF8302199C6AF700BA14B1 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				C7DF8300199C6AF700BA14B1 /* auto_initializers */,
+				C7DF8300199C6AF700BA14B1 /* Mac Library */,
+				C76B9AC6199E8798005DFEBB /* iOS Library */,
 				C7DF8322199C6B8800BA14B1 /* osx_test */,
+				C76B9AE8199E8E49005DFEBB /* ios_test */,
 			);
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		C76B9AE7199E8E49005DFEBB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76B9B15199E975A005DFEBB /* ios_test_info.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		C76B9AC3199E8798005DFEBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76B9AE1199E87FC005DFEBB /* FAAutoInit.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C76B9AE5199E8E49005DFEBB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C76B9B0C199E8E8F005DFEBB /* test.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C7DF82FD199C6AF700BA14B1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -180,21 +306,108 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C7DF832B199C6BAC00BA14B1 /* osx_test.m in Sources */,
+				C7DF832B199C6BAC00BA14B1 /* test.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		C76B9B0E199E8E9A005DFEBB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C76B9AC6199E8798005DFEBB /* iOS Library */;
+			targetProxy = C76B9B0D199E8E9A005DFEBB /* PBXContainerItemProxy */;
+		};
 		C7DF832D199C6BB700BA14B1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = C7DF8300199C6AF700BA14B1 /* auto_initializers */;
+			target = C7DF8300199C6AF700BA14B1 /* Mac Library */;
 			targetProxy = C7DF832C199C6BB700BA14B1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		C76B9AD9199E8798005DFEBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Applications/Xcode6-Beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
+					"libffi-ios/include",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libffi-ios/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = autoinit;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		C76B9ADA199E8798005DFEBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Applications/Xcode6-Beta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include",
+					"libffi-ios/include",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/libffi-ios/lib",
+				);
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = autoinit;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C76B9B07199E8E49005DFEBB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = ios_test_info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		C76B9B08199E8E49005DFEBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				INFOPLIST_FILE = ios_test_info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		C7DF8313199C6AF700BA14B1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -308,6 +521,23 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C76B9AD8199E8798005DFEBB /* Build configuration list for PBXNativeTarget "iOS Library" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C76B9AD9199E8798005DFEBB /* Debug */,
+				C76B9ADA199E8798005DFEBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C76B9B06199E8E49005DFEBB /* Build configuration list for PBXNativeTarget "ios_test" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C76B9B07199E8E49005DFEBB /* Debug */,
+				C76B9B08199E8E49005DFEBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		C7DF82FC199C6AF700BA14B1 /* Build configuration list for PBXProject "auto_initializers" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -317,7 +547,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C7DF8315199C6AF700BA14B1 /* Build configuration list for PBXNativeTarget "auto_initializers" */ = {
+		C7DF8315199C6AF700BA14B1 /* Build configuration list for PBXNativeTarget "Mac Library" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C7DF8316199C6AF700BA14B1 /* Debug */,
