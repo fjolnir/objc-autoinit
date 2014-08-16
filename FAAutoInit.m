@@ -5,7 +5,6 @@
 #import "FAAutoInit.h"
 
 typedef struct {
-    objc_property_t property;
     void *name; // NSString pointer
     const char *encoding;
     NSUInteger size;
@@ -111,7 +110,6 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
             }
 
             *currentPropertyDesc = (_ai_propertyDescription_t) {
-                .property = property,
                 .name = (__bridge_retained void *)@(property_getName(property))
             };
             for(unsigned int i = 0; i < attrCount; ++i) {
