@@ -195,6 +195,8 @@ void _ai_closure(ffi_cif * const aCif,
                        aArgs[i], propertyDesc.size);
         }
     }
+    if([object respondsToSelector:@selector(awakeFromInit)])
+        [object awakeFromInit];
     *aoRet = object;
 }
 
