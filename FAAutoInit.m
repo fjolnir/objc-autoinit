@@ -1,6 +1,5 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
-#import <objc/message.h>
 #import <ffi/ffi.h>
 #import <sys/mman.h>
 #import "FAAutoInit.h"
@@ -9,13 +8,15 @@ typedef struct {
     objc_property_t property;
     void *name; // NSString pointer
     const char *encoding;
-    Ivar ivar;
     NSUInteger size;
+    Ivar ivar;
     BOOL shouldCopy; // Only used if ivar is present (setValue:forKey: handles it otherwise)
-} _ai_propertyInfo_t;
+} _ai_propertyDescription_t;
 
 // Wrapper closure called as a result of a message to `initWith..`
-static void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _ai_propertyInfo_t * const paramInfo);
+static void _ai_closure(ffi_cif * const aCif,
+                        id * const aoRet, void * const aArgs[],
+                        _ai_propertyDescription_t * const propertyDescriptions);
 
 static ffi_closure *_ai_ffi_allocClosure(void ** const codePtr);
 static ffi_status _ai_ffi_prepareClosure(ffi_closure * const closure, ffi_cif * const cif,
@@ -50,11 +51,9 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
         NSString * const sel = NSStringFromSelector(aSel);
         NSRange const withRange = [sel rangeOfString:@"With"];
         if(withRange.location != NSNotFound && [sel hasSuffix:@":"]) {
-            NSScanner * const scanner = [NSScanner scannerWithString:sel];
-            scanner.scanLocation = NSMaxRange(withRange);
-
             NSString *encoding;
-            IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+            IMP const imp = [self _ai_impForProperties:[self _ai_propertiesFromSelector:[sel substringFromIndex:NSMaxRange(withRange)]]
+                                          typeEncoding:&encoding];
             if(imp) {
                 class_addMethod(object_getClass(self), aSel, imp, [encoding UTF8String]);
                 return YES;
@@ -69,11 +68,9 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
     if(class_conformsToProtocol(self, @protocol(FAAutoInit))) {
         NSString * const sel = NSStringFromSelector(aSel);
         if([sel hasPrefix:@"initWith"] && [sel hasSuffix:@":"]) {
-            NSScanner * const scanner = [NSScanner scannerWithString:sel];
-            scanner.scanLocation = 8;
-            
             NSString *encoding;
-            IMP imp = [self _ai_impForSelector:aSel scanner:scanner typeEncoding:&encoding];
+            IMP const imp = [self _ai_impForProperties:[self _ai_propertiesFromSelector:[sel substringFromIndex:8]]
+                                          typeEncoding:&encoding];
             if(imp) {
                 class_addMethod(self, aSel, imp, [encoding UTF8String]);
                 return YES;
@@ -83,94 +80,99 @@ static ffi_type *_ai_scalarTypeToFFIType(const char * const aType);
     return [self _ai_resolveInstanceMethod:aSel];
 }
 
-// aScanner must have its scan location at the first occurrence of a property within a initializing selector
-+ (IMP)_ai_impForSelector:(SEL const)aSel scanner:(NSScanner * const)aScanner typeEncoding:(NSString **)aoEncoding
++ (NSArray *)_ai_propertiesFromSelector:(NSString *)aSelector
 {
-    NSParameterAssert(aSel && aScanner && aoEncoding);
-    NSString * const selStr = NSStringFromSelector(aSel);
-    aScanner.charactersToBeSkipped = [NSCharacterSet characterSetWithCharactersInString:@":"];
+    NSParameterAssert([aSelector hasSuffix:@":"]);
 
-    _ai_propertyInfo_t * const properties = malloc(sizeof(_ai_propertyInfo_t) * [[selStr componentsSeparatedByString:@":"] count]);
+    aSelector = [aSelector stringByReplacingCharactersInRange:(NSRange) {0, 1}
+                                                    withString:[[aSelector substringToIndex:1] lowercaseString]];
+    aSelector = [aSelector substringToIndex:[aSelector length]-1];
+    return [aSelector componentsSeparatedByString:@":"];
+}
+
++ (IMP)_ai_impForProperties:(NSArray * const)aPropertyNames typeEncoding:(NSString **)aoEncoding
+{
+    NSParameterAssert([aPropertyNames count] > 0 && aoEncoding);
+
     NSMutableString * const typeEncoding = [@"@:" mutableCopy];
+    _ai_propertyDescription_t * const propertyDescs = malloc(sizeof(_ai_propertyDescription_t)
+                                                             * [aPropertyNames count]);
 
-    NSUInteger propertyCount = 0;
-    NSString *propertyName;
-    while([aScanner scanUpToString:@":" intoString:&propertyName]) {
-        propertyName = [propertyName stringByReplacingCharactersInRange:(NSRange) {0, 1}
-                                                             withString:[[propertyName substringToIndex:1] lowercaseString]];
-        objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
-        unsigned int attrCount;
-        objc_property_attribute_t * const attributes = property_copyAttributeList(property, &attrCount);
-        if(!property || ! attributes) {
-            free(properties);
-            return NULL;
-        }
+    {
+        _ai_propertyDescription_t *currentPropertyDesc = propertyDescs;
+        for(NSString *propertyName in aPropertyNames) {
+            objc_property_t const property = class_getProperty(self, [propertyName UTF8String]);
+            unsigned int attrCount;
+            objc_property_attribute_t * const attributes = property_copyAttributeList(property, &attrCount);
+            if(!property || !attributes) {
+                free(propertyDescs);
+                free(attributes);
+                return NULL;
+            }
 
-        _ai_propertyInfo_t propertyInfo = {
-            .property = property,
-            .name = (__bridge_retained void *)@(property_getName(property))
-        };
-        for(unsigned int i = 0; i < attrCount; ++i) {
-            objc_property_attribute_t const attr = attributes[i];
-            if(strncmp("T", attr.name, 1) == 0) {
-                propertyInfo.encoding = strdup(attr.value);
-                NSGetSizeAndAlignment(attr.value, &propertyInfo.size, NULL);
-            } else if(strncmp("V", attr.name, 1) == 0)
-                propertyInfo.ivar = class_getInstanceVariable(self, attr.value);
-            else if(strncmp("C", attr.name, 1) == 0)
-                propertyInfo.shouldCopy = YES;
+            *currentPropertyDesc = (_ai_propertyDescription_t) {
+                .property = property,
+                .name = (__bridge_retained void *)@(property_getName(property))
+            };
+            for(unsigned int i = 0; i < attrCount; ++i) {
+                objc_property_attribute_t const attr = attributes[i];
+                if(strncmp("T", attr.name, 1) == 0) {
+                    currentPropertyDesc->encoding = strdup(attr.value);
+                    NSGetSizeAndAlignment(attr.value, &currentPropertyDesc->size, NULL);
+                } else if(strncmp("V", attr.name, 1) == 0)
+                    currentPropertyDesc->ivar = class_getInstanceVariable(self, attr.value);
+                else if(strncmp("C", attr.name, 1) == 0)
+                    currentPropertyDesc->shouldCopy = YES;
+            }
+            free(attributes);
+            if(!currentPropertyDesc->encoding) {
+                free(propertyDescs);
+                return NULL;
+            }
+            ++currentPropertyDesc;
         }
-        free(attributes);
-        if(!propertyInfo.encoding) {
-            free(properties);
-            [NSException raise:NSInternalInconsistencyException
-                        format:@"Unable to get type of property %@", propertyName];
-            return NULL;
-        }
-        properties[propertyCount++] = propertyInfo;
     }
 
     // Create the IMP
     void *imp;
     ffi_closure *closure = _ai_ffi_allocClosure(&imp);
     if(!closure) {
-        free(properties);
-        [NSException raise:NSInternalInconsistencyException
-                    format:@"Failed to allocate closure for %@", selStr];
+        free(propertyDescs);
         return NULL;
     }
 
-    ffi_type ** const parameterTypes = malloc(sizeof(ffi_type*) * (propertyCount + 2));
+    ffi_type ** const parameterTypes = malloc(sizeof(ffi_type*) * ([aPropertyNames count] + 2));
     parameterTypes[0] = parameterTypes[1] = &ffi_type_pointer;
-    for(NSUInteger i = 0; i < propertyCount; ++i) {
-        parameterTypes[i+2] = _ai_encodingToFFIType(properties[i].encoding);
+    for(NSUInteger i = 0; i < [aPropertyNames count]; ++i) {
+        parameterTypes[i+2] = _ai_encodingToFFIType(propertyDescs[i].encoding);
     }
 
     ffi_cif * const cif = malloc(sizeof(ffi_cif));
     if(ffi_prep_cif(cif, FFI_DEFAULT_ABI,
-                    (unsigned int)propertyCount + 2,
+                    (unsigned int)[aPropertyNames count] + 2,
                     &ffi_type_pointer,
                     parameterTypes) == FFI_OK
        && _ai_ffi_prepareClosure(closure, cif,
                                  (void (*)(ffi_cif*,void*,void**,void*))_ai_closure,
-                                 properties,
+                                 propertyDescs,
                                  imp) == FFI_OK)
     {
         *aoEncoding = typeEncoding;
         return imp;
     }
     else {
+        free(propertyDescs);
         free(parameterTypes);
         free(cif);
-        [NSException raise:NSInternalInconsistencyException
-                    format:@"Failed to perpare closure for %@", selStr];
         return NULL;
     }
 }
 
 @end
 
-void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _ai_propertyInfo_t * const properties)
+void _ai_closure(ffi_cif * const aCif,
+                 id * const aoRet, void * const aArgs[],
+                 _ai_propertyDescription_t * const propertyDescs)
 {
     id object = *(__strong id *)aArgs[0];
     if(class_isMetaClass(object_getClass(object)))
@@ -179,20 +181,20 @@ void _ai_closure(ffi_cif * const aCif, id * const aoRet, void * const aArgs[], _
         object = [object init];
 
     for(unsigned int i = 2; i < aCif->nargs; ++i) {
-        _ai_propertyInfo_t const propertyInfo = properties[i-2];
-        if(!propertyInfo.ivar) {
-            id const box = *propertyInfo.encoding == _C_ID
+        _ai_propertyDescription_t const propertyDesc = propertyDescs[i-2];
+        if(!propertyDesc.ivar) {
+            id const box = *propertyDesc.encoding == _C_ID
                          ? *(__strong id *)aArgs[i]
-                         : [NSValue ai_valueWithBytes:aArgs[i] objCType:propertyInfo.encoding];
-            [object setValue:box forKey:(__bridge id)propertyInfo.name];
+                         : [NSValue ai_valueWithBytes:aArgs[i] objCType:propertyDesc.encoding];
+            [object setValue:box forKey:(__bridge id)propertyDesc.name];
         } else {
-            if(*propertyInfo.encoding == _C_ID) {
+            if(*propertyDesc.encoding == _C_ID) {
                 id const parameter = *(__unsafe_unretained id *)aArgs[i];
-                object_setIvar(object, propertyInfo.ivar,
-                               propertyInfo.shouldCopy ? [parameter copy] : parameter);
+                object_setIvar(object, propertyDesc.ivar,
+                               propertyDesc.shouldCopy ? [parameter copy] : parameter);
             } else
-                memcpy(((__bridge void *)object) + ivar_getOffset(propertyInfo.ivar),
-                       aArgs[i], propertyInfo.size);
+                memcpy(((__bridge void *)object) + ivar_getOffset(propertyDesc.ivar),
+                       aArgs[i], propertyDesc.size);
         }
     }
     *aoRet = object;
@@ -258,6 +260,7 @@ ffi_type *_ai_encodingToFFIType(const char *aEncoding)
                 } while((currField = NSGetSizeAndAlignment(currField, NULL, NULL)) && *currField != _C_STRUCT_E);
             }
         }
+        assert(numFields > 0);
         type->elements = (ffi_type **)malloc(sizeof(ffi_type*) * numFields + 1);
         
         if(isArray) {
